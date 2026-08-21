@@ -1,0 +1,22 @@
+{
+  "name": "Ayushman Digital Health Record (ABHA EHR)",
+  "short_name": "Ayushman EHR",
+  "description": "National Digital Health Account & Personal Health Records Portal",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ea580c",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/static/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

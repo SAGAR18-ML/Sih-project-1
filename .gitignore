@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+health_records.db
+uploads/*
+!uploads/.gitkeep
+android-app/.gradle/
+android-app/build/
+android-app/app/build/
+*.log
+.DS_Store

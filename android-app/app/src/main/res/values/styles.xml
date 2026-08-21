@@ -1,0 +1,8 @@
+<resources>
+    <style name="Theme.AyushmanEHR" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimary">#ea580c</item>
+        <item name="colorPrimaryDark">#c2410c</item>
+        <item name="colorAccent">#4f46e5</item>
+        <item name="android:statusBarColor">#ea580c</item>
+    </style>
+</resources>

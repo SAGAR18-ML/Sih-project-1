@@ -1,0 +1,105 @@
+/* HealthPulse EHR Custom Styles */
+
+/* Tab navigation states */
+.tab-btn {
+  color: #64748b;
+  background-color: transparent;
+}
+
+.tab-btn:hover {
+  color: #334155;
+  background-color: #f1f5f9;
+}
+
+.tab-btn.active-tab {
+  color: #4f46e5;
+  background-color: #eef2ff;
+  border-bottom: 2px solid #4f46e5;
+}
+
+.tab-pane {
+  display: none;
+}
+
+.tab-pane.active {
+  display: flex;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Vitals metric toggle buttons */
+.vitals-metric-btn {
+  color: #64748b;
+  background-color: transparent;
+}
+
+.vitals-metric-btn.active {
+  color: #0f172a;
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+/* Lab category filter pills */
+.lab-cat-pill.active {
+  background-color: #0f172a;
+  color: #ffffff;
+}
+
+/* Scrollbar polish */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Print Stylesheet for Emergency Medical Card & Clinical Reports */
+@media print {
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+
+  header, nav, #mainTabNav, button, .vitals-metric-btn, #profileDropdownMenu,
+  #globalSearchInput, #quickAddVitalBtn, #quickAddMedBtn, #quickAddVisitBtn, #editProfileBtn {
+    display: none !important;
+  }
+
+  #emergencyModal {
+    position: static !important;
+    display: block !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  #emergencyModal > div {
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+
+  #printableEmergencyCard {
+    border: 2px solid #000 !important;
+    box-shadow: none !important;
+  }
+
+  .tab-pane {
+    display: block !important;
+  }
+}

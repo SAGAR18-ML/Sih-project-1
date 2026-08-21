@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#ea580c">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Ayushman EHR">
+  <link rel="manifest" href="/static/manifest.json">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              600: '#4f46e5',
+              700: '#4338ca',
+              800: '#3730a3'
+            },
+            saffron: {
+              50: '#fff7ed',
+              500: '#f97316',
+              600: '#ea580c',
+              700: '#c2410c'
+            },
+            indiaGreen: {
+              500: '#16a34a',
+              600: '#15803d',
+              700: '#166534'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- QRCode.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/static/css/custom.css">
+</head>
+<body class="h-full flex flex-col font-sans text-slate-800 antialiased selection:bg-orange-500 selection:text-white">
+
+  <!-- TOP TRICOLOR NATIONAL HEADER BAR -->
+  <div class="h-1.5 w-full bg-gradient-to-r from-orange-500 via-white to-green-600"></div>
+
+  <!-- MAIN HEADER -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+      
+      <!-- National Brand Logo -->
+      <div class="flex items-center gap-2.5 shrink-0">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-500 via-indigo-700 to-green-600 flex items-center justify-center text-white shadow-md shadow-orange-100">
+          <i data-lucide="shield-plus" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-base sm:text-lg font-black tracking-tight text-slate-900" data-i18n="app_title">Ayushman Health Record</span>
+            <span class="text-[10px] font-black uppercase px-1.5 py-0.2 bg-orange-100 text-orange-800 rounded border border-orange-200">ABDM</span>
+          </div>
+          <div class="text-[10px] text-slate-500 font-semibold hidden sm:block" data-i18n="app_subtitle">National ABHA & Rural Health Portal</div>
+        </div>
+      </div>
+
+      <!-- Center ABHA ID / Universal Search Bar -->
+      <div class="flex-1 max-w-md relative hidden md:block">
+        <div class="relative">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          <input type="text" id="globalSearchInput" data-i18n-placeholder="search_placeholder" placeholder="Search by 14-Digit ABHA ID, Mobile No, or Patient Name..." 
+                 class="w-full pl-9 pr-8 py-2 text-xs bg-slate-100/90 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all">
+          <button id="clearSearchBtn" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+        <!-- Live ABHA Search Results Popup -->
+        <div id="abhaSearchResults" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 z-50 max-h-72 overflow-y-auto">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Right Action Tools & Language Switcher -->
+      <div class="flex items-center gap-2">
+        
+        <!-- 11 Regional Languages Dropdown -->
+        <div class="relative">
+          <button id="langDropdownBtn" class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-all">
+            <i data-lucide="globe" class="w-3.5 h-3.5 text-indigo-600"></i>
+            <span id="currentLangLabel">English</span>
+            <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
+          </button>
+          
+          <div id="langDropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-200 py-1.5 z-50">
+            <div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Select Language / भाषा</div>
+            <div class="grid grid-cols-1 divide-y divide-slate-100 text-xs">
+              <button onclick="changeAppLanguage('en')" data-lang="en" class="lang-select-option text-left px-3 py-1.5 hover:bg-slate-50 font-bold text-indigo-600">English</button>
+              <button onclick="changeAppLanguage('hi')" data-lang="hi" class="lang-select-option text-left px-3 py-1.5 hover:bg-slate-50">हिन्दी (Hindi)</button>
+              <button onclick="changeAppLanguage('bn')" data-lang="bn" class="lang-select-option text-left px-3 py-1.5 hover:bg-slate-50">বাংলা (Bengali)</button>
+              <button onclick="changeAppLanguage('te')" data-lang="te" class="lang-select-option text-left px-3 py-1.5 hover:bg-slate-50">తెలుగు (Telugu)</button>
+              <button onclick="changeAppLanguage('ta')" data-lang="ta" class="lang-select-option text-left px-3 py-1.5 hover:bg-slate-50">தமிழ் (Tamil)</button>
+              <button onclick="changeAppLanguage('mr')" data-lang="mr" class="lang-select-option text-left px-3 py-1.5 hover:bg-slate-50">मराठी (Marathi)</button>
+              <button onclick="changeAppLanguage('gu')" data-lang="gu" class="lang-select-option text-left px-3 py-1.5 hover:bg-slate-50">ગુજરાતી (Gujarati)</button>
+              <button onclick="changeAppLanguage('kn')" data-lang="kn" class="lang-select-option text-left px-3 py-1.5 hover:bg-slate-50">ಕನ್ನಡ (Kannada)</button>
+              <button onclick="changeAppLanguage('ml')" data-lang="ml" class="lang-select-option text-left px-3 py-1.5 hover:bg-slate-50">മലയാളം (Malayalam)</button>
+              <button onclick="changeAppLanguage('pa')" data-lang="pa" class="lang-select-option text-left px-3 py-1.5 hover:bg-slate-50">ਪੰਜਾਬੀ (Punjabi)</button>
+              <button onclick="changeAppLanguage('or')" data-lang="or" class="lang-select-option text-left px-3 py-1.5 hover:bg-slate-50">ଓଡ଼ିଆ (Odia)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 108 Emergency Helplines Button -->
+        <button id="openHelplinesBtn" onclick="switchTab('helplines')" class="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all">
+          <i data-lucide="phone-call" class="w-3.5 h-3.5 text-red-600 animate-bounce"></i>
+          <span class="hidden sm:inline" data-i18n="helplines_btn">108 Helplines</span>
+        </button>
+
+        <!-- Emergency ABHA Card Button -->
+        <button id="openEmergencyModalBtn" class="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-xl transition-all">
+          <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-orange-600"></i>
+          <span class="hidden sm:inline" data-i18n="emergency_id_btn">Emergency ABHA Card</span>
+        </button>
+
+        <!-- Profile Selector Dropdown -->
+        <div class="relative">
+          <button id="profileDropdownBtn" class="flex items-center gap-1.5 p-1 sm:px-2.5 sm:py-1.5 text-xs bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-all">
+            <div id="headerAvatar" class="w-6 h-6 rounded-lg bg-indigo-600 text-white font-black flex items-center justify-center text-[10px]">
+              RK
+            </div>
+            <div class="text-left hidden lg:block">
+              <div id="headerProfileName" class="font-bold text-slate-800 text-xs truncate max-w-[110px]">Ramesh Kumar</div>
+            </div>
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
+          </button>
+
+          <!-- Profiles Dropdown Menu -->
+          <div id="profileDropdownMenu" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50">
+            <div class="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Family Members / नागरिक</div>
+            <div id="profileListDropdown" class="max-h-60 overflow-y-auto">
+              <!-- Dynamically rendered -->
+            </div>
+            <div class="border-t border-slate-100 mt-1 pt-1 px-2">
+              <button id="addNewProfileBtn" class="w-full flex items-center gap-2 px-2 py-1.5 text-xs font-bold text-orange-600 hover:bg-orange-50 rounded-xl transition-colors">
+                <i data-lucide="user-plus" class="w-4 h-4"></i>
+                <span>+ Add Family Member / ABHA</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Export / Backup Button -->
+        <button id="openExportModalBtn" title="Export & Backup Health Records" class="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl border border-slate-200 transition-all">
+          <i data-lucide="download" class="w-4 h-4"></i>
+        </button>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <div class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-5 flex flex-col gap-5">
+
+    <!-- OFFICIAL AYUSHMAN BHARAT (ABHA) CITIZEN CARD -->
+    <section class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-xs relative overflow-hidden">
+      <!-- Background Subtle Pattern -->
+      <div class="absolute -right-8 -bottom-8 opacity-5 pointer-events-none text-slate-900">
+        <i data-lucide="shield-check" class="w-64 h-64"></i>
+      </div>
+
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5 relative z-10">
+        
+        <!-- Left: ABHA Identity & Demographics -->
+        <div class="flex items-start sm:items-center gap-4">
+          <div id="heroAvatar" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-orange-500 via-indigo-600 to-green-600 text-white font-black text-2xl flex items-center justify-center shadow-lg shadow-orange-100 shrink-0">
+            RK
+          </div>
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <h1 id="heroName" class="text-xl sm:text-2xl font-black text-slate-900">Ramesh Kumar (रमेश कुमार)</h1>
+              <span id="heroPrimaryBadge" class="px-2 py-0.5 text-[11px] font-bold bg-green-50 text-green-700 rounded-full border border-green-200" data-i18n="primary_badge">Primary Citizen</span>
+              <span id="heroBloodBadge" class="px-2 py-0.5 text-[11px] font-black bg-rose-50 text-rose-700 rounded-full border border-rose-200 flex items-center gap-1">
+                <i data-lucide="droplet" class="w-3 h-3 text-rose-600"></i>
+                <span id="heroBloodGroup">B+</span>
+              </span>
+            </div>
+            
+            <!-- ABHA Number & ABDM Address Badge -->
+            <div class="flex flex-wrap items-center gap-2 mt-1.5">
+              <div class="flex items-center gap-1 px-2.5 py-1 bg-slate-100 rounded-lg text-xs font-mono font-black text-slate-900 border border-slate-200">
+                <span class="text-slate-400 font-sans font-semibold text-[10px]" data-i18n="abha_no_label">ABHA ID:</span>
+                <span id="heroABHANumber">14-5234-8901-2345</span>
+              </div>
+              <div class="flex items-center gap-1 px-2 py-1 bg-indigo-50 text-indigo-800 rounded-lg text-[11px] font-semibold border border-indigo-200">
+                <span id="heroABHAAddress">ramesh.kumar@abdm</span>
+              </div>
+              <div class="flex items-center gap-1 px-2 py-1 bg-orange-50 text-orange-800 rounded-lg text-[11px] font-semibold border border-orange-200">
+                <i data-lucide="shield" class="w-3 h-3 text-orange-600"></i>
+                <span id="heroPMJAY">PM-JAY ₹5L Cover</span>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-2.5">
+              <div>
+                <span data-i18n="dob_label">DOB:</span> <strong id="heroDOB" class="text-slate-800">1982-07-15</strong> (<span id="heroAge">44</span> <span data-i18n="yrs_label">yrs</span>)
+              </div>
+              <div>
+                <span data-i18n="gender_label">Gender:</span> <strong id="heroGender" class="text-slate-800">Male</strong>
+              </div>
+              <div>
+                <span data-i18n="phc_label">Assigned PHC:</span> <strong id="heroPHC" class="text-slate-800">PHC Chandauli</strong>
+              </div>
+              <div>
+                <span data-i18n="district_label">Location:</span> <strong id="heroLocation" class="text-slate-800">Varanasi, UP</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Quick Actions -->
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="quickAddVitalBtn" class="flex items-center gap-1 px-3 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all border border-indigo-200">
+            <i data-lucide="heart-pulse" class="w-4 h-4 text-indigo-600"></i>
+            <span data-i18n="quick_log_vitals">+ Log Vitals</span>
+          </button>
+          <button id="quickAddMedBtn" class="flex items-center gap-1 px-3 py-2 text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-xl transition-all border border-teal-200">
+            <i data-lucide="pill" class="w-4 h-4 text-teal-600"></i>
+            <span data-i18n="quick_add_med">+ Add Medicine</span>
+          </button>
+          <button id="quickAddVisitBtn" class="flex items-center gap-1 px-3 py-2 text-xs font-bold text-orange-700 bg-orange-50 hover:bg-orange-100 rounded-xl transition-all border border-orange-200">
+            <i data-lucide="stethoscope" class="w-4 h-4 text-orange-600"></i>
+            <span data-i18n="quick_log_visit">+ Doctor Visit</span>
+          </button>
+          <button id="editProfileBtn" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all border border-slate-200" title="Edit ABHA Citizen Details">
+            <i data-lucide="settings" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- CRITICAL SEVERE ALLERGY WARNING BANNER -->
+      <div id="severeAllergyAlertBanner" class="hidden mt-4 p-3 bg-red-50 border-l-4 border-red-600 rounded-r-xl flex items-center justify-between">
+        <div class="flex items-center gap-2 text-xs text-red-900 font-bold">
+          <i data-lucide="alert-triangle" class="w-4 h-4 text-red-600 shrink-0"></i>
+          <span><span data-i18n="critical_allergy_alert">CRITICAL ALLERGY ALERT</span>: <span id="severeAllergyListText" class="underline">Penicillin (गंभीर एलर्जी)</span></span>
+        </div>
+        <button onclick="switchTab('allergies')" class="text-xs text-red-700 hover:text-red-900 font-bold underline" data-i18n="view_all">View Details</button>
+      </div>
+
+    </section>
+
+    <!-- NAVIGATION TABS -->
+    <nav class="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-slate-200 scrollbar-none" id="mainTabNav">
+      <button onclick="switchTab('overview')" data-tab="overview" class="tab-btn active-tab flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+        <span data-i18n="tab_overview">Overview</span>
+      </button>
+      <button onclick="switchTab('vitals')" data-tab="vitals" class="tab-btn flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap">
+        <i data-lucide="activity" class="w-4 h-4"></i>
+        <span data-i18n="tab_vitals">Vitals & Trends</span>
+      </button>
+      <button onclick="switchTab('medications')" data-tab="medications" class="tab-btn flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap">
+        <i data-lucide="pill" class="w-4 h-4"></i>
+        <span data-i18n="tab_medications">Prescriptions</span>
+      </button>
+      <button onclick="switchTab('hospitals')" data-tab="hospitals" class="tab-btn flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap bg-orange-50/50 text-orange-700 border border-orange-200">
+        <i data-lucide="map-pin" class="w-4 h-4 text-orange-600"></i>
+        <span data-i18n="tab_hospitals">Nearby Hospitals & PHCs</span>
+      </button>
+      <button onclick="switchTab('helplines')" data-tab="helplines" class="tab-btn flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap bg-red-50/50 text-red-700 border border-red-200">
+        <i data-lucide="phone-call" class="w-4 h-4 text-red-600"></i>
+        <span data-i18n="tab_helplines">Emergency 108</span>
+      </button>
+      <button onclick="switchTab('conditions')" data-tab="conditions" class="tab-btn flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap">
+        <i data-lucide="stethoscope" class="w-4 h-4"></i>
+        <span data-i18n="tab_conditions">Health Conditions</span>
+      </button>
+      <button onclick="switchTab('labs')" data-tab="labs" class="tab-btn flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap">
+        <i data-lucide="flask-conical" class="w-4 h-4"></i>
+        <span data-i18n="tab_labs">Lab Reports</span>
+      </button>
+      <button onclick="switchTab('allergies')" data-tab="allergies" class="tab-btn flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap">
+        <i data-lucide="shield-alert" class="w-4 h-4"></i>
+        <span data-i18n="tab_allergies">Allergies</span>
+      </button>
+      <button onclick="switchTab('vaccines')" data-tab="vaccines" class="tab-btn flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap">
+        <i data-lucide="syringe" class="w-4 h-4"></i>
+        <span data-i18n="tab_vaccines">Vaccinations</span>
+      </button>
+      <button onclick="switchTab('visits')" data-tab="visits" class="tab-btn flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap">
+        <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+        <span data-i18n="tab_visits">Doctor Visits</span>
+      </button>
+      <button onclick="switchTab('attachments')" data-tab="attachments" class="tab-btn flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap">
+        <i data-lucide="paperclip" class="w-4 h-4"></i>
+        <span data-i18n="tab_attachments">Documents</span>
+      </button>
+    </nav>
+
+    <!-- TAB CONTENTS -->
+    <main id="tabContentContainer" class="flex-1">
+
+      <!-- ============================================== -->
+      <!-- TAB 1: OVERVIEW & DASHBOARD SUMMARY -->
+      <!-- ============================================== -->
+      <div id="tab-overview" class="tab-pane active flex flex-col gap-5">
+        
+        <!-- Vitals Metric Cards Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          
+          <!-- Blood Pressure Card -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider" data-i18n="bp_title">Blood Pressure</span>
+              <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
+                <i data-lucide="heart" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div class="my-3">
+              <div class="flex items-baseline gap-1">
+                <span id="overviewBPVal" class="text-2xl font-black text-slate-900">120/78</span>
+                <span class="text-xs text-slate-500 font-medium">mmHg</span>
+              </div>
+              <div class="mt-2">
+                <span id="overviewBPBadge" class="px-2 py-0.5 text-[11px] font-bold rounded-md bg-emerald-500 text-white">Normal</span>
+              </div>
+            </div>
+            <div class="text-[11px] text-slate-400 flex items-center gap-1">
+              <i data-lucide="map-pin" class="w-3 h-3"></i>
+              <span id="overviewBPDate">Recorded at: PHC Chandauli</span>
+            </div>
+          </div>
+
+          <!-- Heart Rate Card -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider" data-i18n="hr_title">Heart Rate (Pulse)</span>
+              <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <i data-lucide="activity" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div class="my-3">
+              <div class="flex items-baseline gap-1">
+                <span id="overviewHRVal" class="text-2xl font-black text-slate-900">66</span>
+                <span class="text-xs text-slate-500 font-medium">BPM</span>
+              </div>
+              <div class="mt-2">
+                <span class="px-2 py-0.5 text-[11px] font-bold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200" data-i18n="normal">Normal</span>
+              </div>
+            </div>
+            <div class="text-[11px] text-slate-400 flex items-center gap-1">
+              <i data-lucide="check" class="w-3 h-3 text-emerald-500"></i>
+              <span>Resting normal pulse</span>
+            </div>
+          </div>
+
+          <!-- Blood Glucose Card -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider" data-i18n="glucose_title">Blood Glucose</span>
+              <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+                <i data-lucide="droplets" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div class="my-3">
+              <div class="flex items-baseline gap-1">
+                <span id="overviewGlucoseVal" class="text-2xl font-black text-slate-900">94.0</span>
+                <span class="text-xs text-slate-500 font-medium">mg/dL</span>
+              </div>
+              <div class="mt-2">
+                <span id="overviewGlucoseType" class="px-2 py-0.5 text-[11px] font-bold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">Fasting (Normal)</span>
+              </div>
+            </div>
+            <div class="text-[11px] text-slate-400 flex items-center gap-1">
+              <i data-lucide="check-circle-2" class="w-3 h-3 text-emerald-500"></i>
+              <span>Non-diabetic range</span>
+            </div>
+          </div>
+
+          <!-- BMI & Weight Card -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider" data-i18n="bmi_title">Weight & BMI</span>
+              <div class="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center">
+                <i data-lucide="scale" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div class="my-3">
+              <div class="flex items-baseline gap-1">
+                <span id="overviewBMIVal" class="text-2xl font-black text-slate-900">23.8</span>
+                <span class="text-xs text-slate-500 font-medium">BMI (<span id="overviewWeightVal">70.5</span> kg)</span>
+              </div>
+              <div class="mt-2">
+                <span id="overviewBMIBadge" class="px-2 py-0.5 text-[11px] font-bold rounded-md bg-emerald-500 text-white">Normal weight</span>
+              </div>
+            </div>
+            <div class="text-[11px] text-slate-400 flex items-center gap-1">
+              <i data-lucide="trending-down" class="w-3 h-3 text-emerald-500"></i>
+              <span>Healthy body mass</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 2-Column Section: Trends Chart & Today's Medications Checklist -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          
+          <!-- Vitals Analytics Preview (2 Cols) -->
+          <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="font-bold text-slate-900 text-base" data-i18n="tab_vitals">Vitals History & Trends</h3>
+                <p class="text-xs text-slate-500">Longitudinal health tracking across PHC and home checks</p>
+              </div>
+              <button onclick="switchTab('vitals')" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                <span data-i18n="view_all">Detailed Analytics</span>
+                <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+            <div class="h-64 relative w-full">
+              <canvas id="overviewTrendsChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Active Prescriptions / Daily Schedule (1 Col) -->
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <div>
+                  <h3 class="font-bold text-slate-900 text-base" data-i18n="daily_prescriptions">Daily Prescriptions</h3>
+                  <p class="text-[11px] text-slate-500" data-i18n="adherence_tracker">Mark medicines taken today</p>
+                </div>
+                <button onclick="switchTab('medications')" class="text-xs font-bold text-indigo-600 hover:text-indigo-800" data-i18n="view_all">
+                  Manage
+                </button>
+              </div>
+              <div id="overviewMedsList" class="flex flex-col gap-2">
+                <!-- Dynamically filled -->
+              </div>
+            </div>
+            
+            <div class="mt-4 pt-3 border-t border-slate-100 text-center">
+              <button onclick="openModal('addMedicationModal')" class="w-full py-2 text-xs font-bold text-slate-600 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 rounded-xl transition-all border border-dashed border-slate-300">
+                + Add New Prescription
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 3-Column Bottom Row: Conditions, Upcoming Care, Recent Labs -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+          
+          <!-- Active Conditions Card -->
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <i data-lucide="stethoscope" class="w-4 h-4 text-indigo-600"></i>
+                <h4 class="font-bold text-slate-900 text-sm" data-i18n="active_conditions">Active Conditions</h4>
+              </div>
+              <button onclick="switchTab('conditions')" class="text-xs text-indigo-600 hover:underline" data-i18n="view_all">View All</button>
+            </div>
+            <div id="overviewConditionsList" class="flex flex-col gap-2 flex-1">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Upcoming Follow-ups & Vaccines -->
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <i data-lucide="calendar" class="w-4 h-4 text-teal-600"></i>
+                <h4 class="font-bold text-slate-900 text-sm" data-i18n="upcoming_care">Upcoming Care & Reminders</h4>
+              </div>
+              <button onclick="switchTab('visits')" class="text-xs text-teal-600 hover:underline" data-i18n="view_all">Visits</button>
+            </div>
+            <div id="overviewUpcomingList" class="flex flex-col gap-2 flex-1">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Recent Diagnostic Lab Results -->
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <i data-lucide="flask-conical" class="w-4 h-4 text-amber-600"></i>
+                <h4 class="font-bold text-slate-900 text-sm" data-i18n="recent_labs">Recent Lab Reports</h4>
+              </div>
+              <button onclick="switchTab('labs')" class="text-xs text-amber-600 hover:underline" data-i18n="view_all">All Labs</button>
+            </div>
+            <div id="overviewRecentLabsList" class="flex flex-col gap-2 flex-1">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- ============================================== -->
+      <!-- TAB: NEARBY HOSPITALS & PHC GPS LOCATOR -->
+      <!-- ============================================== -->
+      <div id="tab-hospitals" class="tab-pane flex flex-col gap-5">
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="map-pin" class="w-5 h-5 text-orange-600"></i>
+              <span data-i18n="nearby_hospitals_btn">Nearby Government Hospitals, PHCs & CHCs</span>
+            </h2>
+            <p class="text-xs text-slate-500">Live GPS geolocation to find nearest healthcare facilities and emergency blood banks</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="refreshUserLocation()" class="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all border border-indigo-200">
+              <i data-lucide="locate-fixed" class="w-4 h-4 text-indigo-600"></i>
+              <span>GPS Refresh</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Facility Type Filters -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-1" id="hospitalTypeFilters">
+          <button onclick="filterFacilities('All')" class="fac-filter-btn active px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-900 text-white">All Facilities</button>
+          <button onclick="filterFacilities('PHC')" class="fac-filter-btn px-3 py-1.5 text-xs font-bold rounded-lg bg-white border border-slate-200 text-slate-700">Primary Health Centres (PHC)</button>
+          <button onclick="filterFacilities('CHC')" class="fac-filter-btn px-3 py-1.5 text-xs font-bold rounded-lg bg-white border border-slate-200 text-slate-700">Community Health Centres (CHC)</button>
+          <button onclick="filterFacilities('District Hospital')" class="fac-filter-btn px-3 py-1.5 text-xs font-bold rounded-lg bg-white border border-slate-200 text-slate-700">District Hospitals</button>
+          <button onclick="filterFacilities('Medical College Hospital')" class="fac-filter-btn px-3 py-1.5 text-xs font-bold rounded-lg bg-white border border-slate-200 text-slate-700">Medical Colleges</button>
+        </div>
+
+        <!-- Facilities Cards Grid -->
+        <div id="facilitiesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Dynamically populated by JS -->
+        </div>
+
+      </div>
+
+      <!-- ============================================== -->
+      <!-- TAB: EMERGENCY 108 HELPLINES -->
+      <!-- ============================================== -->
+      <div id="tab-helplines" class="tab-pane flex flex-col gap-5">
+        
+        <div class="bg-gradient-to-r from-red-600 to-rose-700 text-white p-6 rounded-3xl shadow-lg relative overflow-hidden">
+          <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2 text-red-200 text-xs font-bold uppercase tracking-wider">
+                <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                <span>Government of India &bull; National Emergency Directory</span>
+              </div>
+              <h2 class="text-2xl font-black text-white mt-1">24x7 Toll-Free Emergency Helplines</h2>
+              <p class="text-xs text-red-100 mt-1 max-w-xl">Instant one-tap dialing for free medical emergency transport, maternal ambulance, Ayushman PM-JAY support, and mental health counseling.</p>
+            </div>
+            <div class="text-3xl font-black tracking-widest bg-white/20 px-4 py-2 rounded-2xl backdrop-blur-xs self-start">
+              108 / 112
+            </div>
+          </div>
+        </div>
+
+        <div id="helplinesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Dynamically populated by JS -->
+        </div>
+
+      </div>
+
+      <!-- ============================================== -->
+      <!-- TAB 2: VITALS & TRENDS -->
+      <!-- ============================================== -->
+      <div id="tab-vitals" class="tab-pane flex flex-col gap-5">
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900" data-i18n="tab_vitals">Vital Signs & Biometrics</h2>
+            <p class="text-xs text-slate-500">Record, analyze, and monitor cardiovascular and metabolic health</p>
+          </div>
+          <button onclick="openModal('addVitalModal')" class="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all shadow-md shadow-indigo-200">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span data-i18n="quick_log_vitals">Log New Vitals</span>
+          </button>
+        </div>
+
+        <!-- Interactive Chart Controls & Canvas -->
+        <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col gap-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+              <button onclick="changeVitalsMetric('bp')" id="metricBtn-bp" class="vitals-metric-btn active px-3 py-1.5 text-xs font-bold rounded-lg transition-all" data-i18n="bp_title">Blood Pressure</button>
+              <button onclick="changeVitalsMetric('hr')" id="metricBtn-hr" class="vitals-metric-btn px-3 py-1.5 text-xs font-bold rounded-lg transition-all" data-i18n="hr_title">Heart Rate</button>
+              <button onclick="changeVitalsMetric('glucose')" id="metricBtn-glucose" class="vitals-metric-btn px-3 py-1.5 text-xs font-bold rounded-lg transition-all" data-i18n="glucose_title">Blood Glucose</button>
+              <button onclick="changeVitalsMetric('weight')" id="metricBtn-weight" class="vitals-metric-btn px-3 py-1.5 text-xs font-bold rounded-lg transition-all" data-i18n="bmi_title">Weight & BMI</button>
+            </div>
+
+            <div id="vitalsChartStats" class="text-xs font-semibold text-slate-600 flex items-center gap-3">
+              <!-- Dynamically rendered -->
+            </div>
+          </div>
+
+          <div class="h-72 relative w-full">
+            <canvas id="detailedVitalsChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Vitals Historical Table -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+          <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+            <h3 class="font-bold text-slate-900 text-sm">Vitals Logbook</h3>
+            <span id="vitalsCountLabel" class="text-xs text-slate-500 font-medium">Showing all logs</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase font-semibold">
+                <tr>
+                  <th class="px-4 py-3">Date & Facility</th>
+                  <th class="px-4 py-3">Blood Pressure</th>
+                  <th class="px-4 py-3">Pulse</th>
+                  <th class="px-4 py-3">Glucose</th>
+                  <th class="px-4 py-3">SpO2</th>
+                  <th class="px-4 py-3">Temp</th>
+                  <th class="px-4 py-3">Weight / BMI</th>
+                  <th class="px-4 py-3">Notes</th>
+                  <th class="px-4 py-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="vitalsTableBody" class="divide-y divide-slate-100">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ============================================== -->
+      <!-- TAB 3: MEDICATIONS & PRESCRIPTIONS -->
+      <!-- ============================================== -->
+      <div id="tab-medications" class="tab-pane flex flex-col gap-5">
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900" data-i18n="tab_medications">Medications & Prescriptions</h2>
+            <p class="text-xs text-slate-500">Track active treatments, dosages, schedules, and refills</p>
+          </div>
+          <button onclick="openModal('addMedicationModal')" class="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 rounded-xl transition-all shadow-md shadow-teal-200">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span data-i18n="quick_add_med">+ Add Medicine</span>
+          </button>
+        </div>
+
+        <div id="medicationsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Dynamically populated -->
+        </div>
+
+      </div>
+
+      <!-- ============================================== -->
+      <!-- TAB 4: CONDITIONS & MEDICAL HISTORY -->
+      <!-- ============================================== -->
+      <div id="tab-conditions" class="tab-pane flex flex-col gap-5">
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900" data-i18n="tab_conditions">Medical Conditions & Diagnoses</h2>
+            <p class="text-xs text-slate-500">Chronic illnesses, past diagnoses, and treatment plans</p>
+          </div>
+          <button onclick="openModal('addConditionModal')" class="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all shadow-md shadow-indigo-200">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>+ Add Condition</span>
+          </button>
+        </div>
+
+        <div id="conditionsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Dynamically populated -->
+        </div>
+
+      </div>
+
+      <!-- ============================================== -->
+      <!-- TAB 5: LAB RESULTS & DIAGNOSTICS -->
+      <!-- ============================================== -->
+      <div id="tab-labs" class="tab-pane flex flex-col gap-5">
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900" data-i18n="tab_labs">Diagnostic Tests & Lab Results</h2>
+            <p class="text-xs text-slate-500">Blood work, metabolic panels, pathology, and imaging reports</p>
+          </div>
+          <button onclick="openModal('addLabModal')" class="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-all shadow-md shadow-amber-200">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>+ Log Lab Test</span>
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2 overflow-x-auto pb-1" id="labCategoryFilters">
+          <button onclick="filterLabs('All')" class="lab-cat-pill active px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-900 text-white transition-all">All Panels</button>
+          <button onclick="filterLabs('Biochemistry')" class="lab-cat-pill px-3 py-1.5 text-xs font-bold rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all">Biochemistry</button>
+          <button onclick="filterLabs('Lipid')" class="lab-cat-pill px-3 py-1.5 text-xs font-bold rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all">Lipid Profile</button>
+          <button onclick="filterLabs('Hematology')" class="lab-cat-pill px-3 py-1.5 text-xs font-bold rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all">Hematology (Hb/CBC)</button>
+          <button onclick="filterLabs('Renal')" class="lab-cat-pill px-3 py-1.5 text-xs font-bold rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all">Renal Function</button>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase font-semibold">
+                <tr>
+                  <th class="px-4 py-3">Test Name & Category</th>
+                  <th class="px-4 py-3">Date</th>
+                  <th class="px-4 py-3">Result Value</th>
+                  <th class="px-4 py-3">Reference Range</th>
+                  <th class="px-4 py-3">Status</th>
+                  <th class="px-4 py-3">Ordered By / Lab</th>
+                  <th class="px-4 py-3">Notes</th>
+                  <th class="px-4 py-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="labsTableBody" class="divide-y divide-slate-100">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ============================================== -->
+      <!-- TAB 6: ALLERGIES -->
+      <!-- ============================================== -->
+      <div id="tab-allergies" class="tab-pane flex flex-col gap-5">
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900" data-i18n="tab_allergies">Allergies & Adverse Drug Reactions</h2>
+            <p class="text-xs text-slate-500">Crucial safety information for medical providers and emergency care</p>
+          </div>
+          <button onclick="openModal('addAllergyModal')" class="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition-all shadow-md shadow-rose-200">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>+ Add Allergy</span>
+          </button>
+        </div>
+
+        <div id="allergiesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Dynamically populated -->
+        </div>
+
+      </div>
+
+      <!-- ============================================== -->
+      <!-- TAB 7: VACCINATIONS -->
+      <!-- ============================================== -->
+      <div id="tab-vaccines" class="tab-pane flex flex-col gap-5">
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900" data-i18n="tab_vaccines">Universal Immunization / Mission Indradhanush</h2>
+            <p class="text-xs text-slate-500">Vaccine tracking under the Universal Immunization Programme (UIP)</p>
+          </div>
+          <button onclick="openModal('addVaccineModal')" class="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all shadow-md shadow-indigo-200">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>+ Record Vaccine</span>
+          </button>
+        </div>
+
+        <div id="vaccinesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Dynamically populated -->
+        </div>
+
+      </div>
+
+      <!-- ============================================== -->
+      <!-- TAB 8: DOCTOR VISITS -->
+      <!-- ============================================== -->
+      <div id="tab-visits" class="tab-pane flex flex-col gap-5">
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900" data-i18n="tab_visits">PHC & Hospital Consultations</h2>
+            <p class="text-xs text-slate-500">Clinical encounter logs, physician advice, diagnoses, and follow-ups</p>
+          </div>
+          <button onclick="openModal('addVisitModal')" class="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all shadow-md shadow-indigo-200">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>+ Log Consultation</span>
+          </button>
+        </div>
+
+        <div id="visitsTimeline" class="flex flex-col gap-4">
+          <!-- Dynamically populated -->
+        </div>
+
+      </div>
+
+      <!-- ============================================== -->
+      <!-- TAB 9: DOCUMENTS -->
+      <!-- ============================================== -->
+      <div id="tab-attachments" class="tab-pane flex flex-col gap-5">
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900" data-i18n="tab_attachments">Medical Documents & File Storage</h2>
+            <p class="text-xs text-slate-500">Upload and store PDF lab reports, discharge summaries, and medical imaging</p>
+          </div>
+          <button onclick="openModal('uploadDocumentModal')" class="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all shadow-md shadow-indigo-200">
+            <i data-lucide="upload" class="w-4 h-4"></i>
+            <span>Upload Document</span>
+          </button>
+        </div>
+
+        <div id="attachmentsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Dynamically populated -->
+        </div>
+
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- MODALS CONTAINER -->
+  <!-- ==================================================== -->
+
+  <!-- OFFICIAL BILINGUAL EMERGENCY ABHA CARD MODAL -->
+  <div id="emergencyModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl border border-orange-200 relative overflow-hidden flex flex-col gap-5">
+      
+      <!-- Top National Header -->
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-orange-600 text-white flex items-center justify-center font-black">
+            <i data-lucide="shield-alert" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-black text-slate-900">National Emergency Health Card (आभा)</h3>
+            <p class="text-[11px] text-orange-700 font-semibold">Ayushman Bharat Digital Mission (ABDM)</p>
+          </div>
+        </div>
+        <button onclick="closeModal('emergencyModal')" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-xl">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Printable Emergency ABHA Card Body -->
+      <div id="printableEmergencyCard" class="bg-slate-50 border-2 border-orange-200 rounded-2xl p-5 flex flex-col gap-3">
+        
+        <div class="flex items-start justify-between">
+          <div>
+            <h4 id="emCardName" class="text-lg font-black text-slate-900">Ramesh Kumar</h4>
+            <div class="text-xs text-slate-600 mt-0.5">
+              <span>ABHA ID: <strong id="emCardABHA" class="font-mono text-slate-900">14-5234-8901-2345</strong></span> &bull; 
+              <span>DOB: <strong id="emCardDOB">1982-07-15</strong></span>
+            </div>
+            <div class="text-[11px] text-slate-500">
+              <span>ABHA Address: <strong id="emCardABHAAddr" class="text-indigo-700">ramesh.kumar@abdm</strong></span>
+            </div>
+          </div>
+          <div class="text-right">
+            <span class="text-[9px] uppercase font-black text-slate-400 block">Blood Group</span>
+            <span id="emCardBlood" class="text-xl font-black text-rose-600">B+</span>
+          </div>
+        </div>
+
+        <!-- Severe Allergies Warning -->
+        <div class="p-2.5 bg-red-100/80 border border-red-300 rounded-xl">
+          <span class="text-[9px] uppercase font-black text-red-800 tracking-wider block mb-0.5">CRITICAL ALLERGIES & ADVERSE REACTIONS / गंभीर एलर्जी</span>
+          <div id="emCardAllergies" class="text-xs font-bold text-red-900">
+            Penicillin (Severe: Anaphylaxis / Facial swelling)
+          </div>
+        </div>
+
+        <!-- Medical Conditions & Meds -->
+        <div class="grid grid-cols-2 gap-2.5 text-xs">
+          <div class="p-2.5 bg-white border border-slate-200 rounded-xl">
+            <span class="text-[9px] uppercase font-bold text-slate-400 block mb-1">Health Conditions / बीमारियां</span>
+            <ul id="emCardConditions" class="space-y-1 text-slate-700 font-medium text-[11px]">
+              <!-- Populated dynamically -->
+            </ul>
+          </div>
+          <div class="p-2.5 bg-white border border-slate-200 rounded-xl">
+            <span class="text-[9px] uppercase font-bold text-slate-400 block mb-1">Active Daily Meds / दवाएं</span>
+            <ul id="emCardMeds" class="space-y-1 text-slate-700 font-medium text-[11px]">
+              <!-- Populated dynamically -->
+            </ul>
+          </div>
+        </div>
+
+        <!-- Emergency Contacts & QR -->
+        <div class="flex items-center justify-between pt-2 border-t border-slate-200 text-xs">
+          <div>
+            <span class="text-[9px] uppercase font-bold text-slate-400 block">Emergency Contact (ICE)</span>
+            <strong id="emCardICEContact" class="text-slate-900 font-bold block text-xs">Sunita Devi (Spouse)</strong>
+            <span id="emCardICEPhone" class="text-slate-600 font-semibold">+91 98765 43211</span>
+          </div>
+          <div class="flex flex-col items-center">
+            <div id="emQRCode" class="bg-white p-1 rounded-lg border border-slate-200 shadow-2xs"></div>
+            <span class="text-[8px] text-slate-400 mt-0.5">Scan ABHA QR</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center justify-end gap-2">
+        <button onclick="window.print()" class="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all">
+          <i data-lucide="printer" class="w-4 h-4"></i>
+          <span>Print Wallet Card</span>
+        </button>
+        <button onclick="closeModal('emergencyModal')" class="px-4 py-2 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition-all">
+          Close
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ADD/EDIT ABHA PROFILE MODAL -->
+  <div id="profileModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 id="profileModalTitle" class="text-lg font-bold text-slate-900">Add Individual / ABHA Profile</h3>
+        <button onclick="closeModal('profileModal')" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="profileForm" onsubmit="handleSaveProfile(event)" class="flex flex-col gap-3 text-xs">
+        <input type="hidden" id="profFormId">
+        
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Full Legal Name (as per Aadhaar / ABHA) *</label>
+          <input type="text" id="profFormName" required placeholder="e.g. Ramesh Kumar" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">14-Digit ABHA Number</label>
+            <input type="text" id="profFormABHANumber" placeholder="e.g. 14-5234-8901-2345" class="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">ABHA Address (@abdm)</label>
+            <input type="text" id="profFormABHAAddress" placeholder="e.g. ramesh.kumar@abdm" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Date of Birth *</label>
+            <input type="date" id="profFormDOB" required class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Gender *</label>
+            <select id="profFormGender" required class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+              <option value="Male">Male (पुरुष)</option>
+              <option value="Female">Female (महिला)</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Blood Group</label>
+            <select id="profFormBlood" class="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold">
+              <option value="B+">B+</option>
+              <option value="O+">O+</option>
+              <option value="A+">A+</option>
+              <option value="AB+">AB+</option>
+              <option value="B-">B-</option>
+              <option value="O-">O-</option>
+              <option value="A-">A-</option>
+              <option value="AB-">AB-</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Mobile Number (Aadhaar linked)</label>
+            <input type="tel" id="profFormPhone" placeholder="+91 98765 43210" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">PM-JAY Scheme ID</label>
+            <input type="text" id="profFormPMJAY" placeholder="e.g. PMJAY-UP-88239102" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Village / Town</label>
+            <input type="text" id="profFormVillage" placeholder="e.g. Gram Rampur" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">District</label>
+            <input type="text" id="profFormDistrict" placeholder="e.g. Varanasi" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">State</label>
+            <input type="text" id="profFormState" placeholder="e.g. Uttar Pradesh" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+        </div>
+
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Assigned Primary Health Centre (PHC)</label>
+          <input type="text" id="profFormPHC" placeholder="e.g. Primary Health Centre (PHC) Chandauli" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Emergency Contact</label>
+            <input type="text" id="profFormECName" placeholder="Name" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Emergency Phone</label>
+            <input type="tel" id="profFormECPhone" placeholder="Phone" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Relation</label>
+            <input type="text" id="profFormECRel" placeholder="e.g. Spouse" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+        </div>
+
+        <div class="flex items-center gap-4 py-1">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" id="profFormOrganDonor" class="rounded text-indigo-600">
+            <span class="font-semibold text-slate-700">Pledged Organ Donor (NOTTO)</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" id="profFormIsPrimary" class="rounded text-indigo-600">
+            <span class="font-semibold text-slate-700">Set as Primary Profile</span>
+          </label>
+        </div>
+
+        <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+          <button type="button" id="deleteProfileBtn" onclick="handleDeleteCurrentProfile()" class="text-red-600 hover:text-red-800 font-semibold hidden">Delete Profile</button>
+          <div class="flex items-center gap-2 ml-auto">
+            <button type="button" onclick="closeModal('profileModal')" class="px-4 py-2 font-bold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
+            <button type="submit" class="px-5 py-2 font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-xl shadow-md shadow-orange-100">Save ABHA Profile</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD VITALS MODAL -->
+  <div id="addVitalModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+          <i data-lucide="heart-pulse" class="w-5 h-5 text-indigo-600"></i>
+          <span>Record Health Vitals / स्वास्थ्य जांच</span>
+        </h3>
+        <button onclick="closeModal('addVitalModal')" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="vitalForm" onsubmit="handleSaveVital(event)" class="flex flex-col gap-3 text-xs">
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Date & Time *</label>
+          <input type="datetime-local" id="vitalFormDate" required class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Systolic BP (mmHg)</label>
+            <input type="number" id="vitalFormSys" placeholder="e.g. 120" min="50" max="260" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Diastolic BP (mmHg)</label>
+            <input type="number" id="vitalFormDia" placeholder="e.g. 80" min="30" max="160" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Pulse / Heart Rate (BPM)</label>
+            <input type="number" id="vitalFormHR" placeholder="e.g. 72" min="30" max="220" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Oxygen SpO2 (%)</label>
+            <input type="number" step="0.1" id="vitalFormSpO2" placeholder="e.g. 98.5" min="70" max="100" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Blood Glucose (mg/dL)</label>
+            <input type="number" step="0.1" id="vitalFormGlucose" placeholder="e.g. 95.0" min="20" max="600" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Glucose Type</label>
+            <select id="vitalFormGlucoseType" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+              <option value="Fasting">Fasting (खाली पेट)</option>
+              <option value="Post-meal">Post-meal (भोजन के बाद)</option>
+              <option value="Random">Random / Regular</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Weight (kg)</label>
+            <input type="number" step="0.1" id="vitalFormWeight" placeholder="e.g. 70.5" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Height (cm)</label>
+            <input type="number" step="0.1" id="vitalFormHeight" placeholder="e.g. 172.0" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Recorded At</label>
+            <input type="text" id="vitalFormFacility" placeholder="e.g. PHC Chandauli" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+        </div>
+
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Notes</label>
+          <input type="text" id="vitalFormNotes" placeholder="Remarks..." class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeModal('addVitalModal')" class="px-4 py-2 font-bold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
+          <button type="submit" class="px-5 py-2 font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md shadow-indigo-100">Save Vitals</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD MEDICATION MODAL -->
+  <div id="addMedicationModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+          <i data-lucide="pill" class="w-5 h-5 text-teal-600"></i>
+          <span>Add Medicine & Prescription / दवा जोड़ें</span>
+        </h3>
+        <button onclick="closeModal('addMedicationModal')" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="medicationForm" onsubmit="handleSaveMedication(event)" class="flex flex-col gap-3 text-xs">
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Medicine Name *</label>
+          <input type="text" id="medFormName" required placeholder="e.g. Amlodipine, Metformin, Paracetamol" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Dosage *</label>
+            <input type="text" id="medFormDosage" required placeholder="e.g. 5 mg, 500 mg, 10 ml" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Form</label>
+            <select id="medFormForm" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+              <option value="Tablet">Tablet (गोली)</option>
+              <option value="Syrup / Liquid">Syrup (सिरप)</option>
+              <option value="Capsule">Capsule (कैप्सूल)</option>
+              <option value="Injection">Injection (इंजेक्शन)</option>
+              <option value="Drops">Drops (ड्रॉप्स)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Frequency *</label>
+            <input type="text" id="medFormFreq" required placeholder="e.g. Once daily in morning, Twice daily" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Prescribed By</label>
+            <input type="text" id="medFormDoctor" placeholder="e.g. Dr. Anand Verma (PHC)" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+        </div>
+
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Instructions</label>
+          <input type="text" id="medFormInstructions" placeholder="e.g. Take after meals with warm water" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeModal('addMedicationModal')" class="px-4 py-2 font-bold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
+          <button type="submit" class="px-5 py-2 font-bold text-white bg-teal-600 hover:bg-teal-700 rounded-xl shadow-md shadow-teal-100">Save Medicine</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD ALLERGY MODAL -->
+  <div id="addAllergyModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+          <i data-lucide="shield-alert" class="w-5 h-5 text-rose-600"></i>
+          <span>Add Allergy or Reaction / एलर्जी जोड़ें</span>
+        </h3>
+        <button onclick="closeModal('addAllergyModal')" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="allergyForm" onsubmit="handleSaveAllergy(event)" class="flex flex-col gap-3 text-xs">
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Allergen (Drug, Food, Insect) *</label>
+          <input type="text" id="allergyFormAllergen" required placeholder="e.g. Penicillin, Peanuts, Dust" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Category</label>
+            <select id="allergyFormType" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+              <option value="Drug">Drug / Medicine</option>
+              <option value="Food">Food item</option>
+              <option value="Environmental">Environmental / Dust</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Severity *</label>
+            <select id="allergyFormSeverity" class="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold">
+              <option value="Severe" class="text-red-600 font-bold">Severe (गंभीर / सांस फूलना)</option>
+              <option value="Moderate" selected class="text-amber-600">Moderate (मध्यम)</option>
+              <option value="Mild" class="text-slate-700">Mild (हल्का)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Reaction Symptoms *</label>
+          <input type="text" id="allergyFormReaction" required placeholder="e.g. Hives, facial swelling, breathing tightness" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+        </div>
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Notes</label>
+          <input type="text" id="allergyFormNotes" placeholder="Emergency instructions..." class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeModal('addAllergyModal')" class="px-4 py-2 font-bold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
+          <button type="submit" class="px-5 py-2 font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md shadow-rose-100">Save Allergy</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD CONDITION MODAL -->
+  <div id="addConditionModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-lg font-bold text-slate-900">Add Medical Condition / बीमारी विवरण</h3>
+        <button onclick="closeModal('addConditionModal')" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="conditionForm" onsubmit="handleSaveCondition(event)" class="flex flex-col gap-3 text-xs">
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Condition Name / Diagnosis *</label>
+          <input type="text" id="condFormName" required placeholder="e.g. Hypertension, Diabetes, Asthma" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Status</label>
+            <select id="condFormStatus" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+              <option value="Active">Active (सक्रिय)</option>
+              <option value="Managed">Managed (नियंत्रित)</option>
+              <option value="Resolved">Resolved (ठीक हो गया)</option>
+            </select>
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Severity</label>
+            <select id="condFormSeverity" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+              <option value="Mild">Mild</option>
+              <option value="Moderate">Moderate</option>
+              <option value="Severe">Severe</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Treatment Plan & Doctor Advice</label>
+          <textarea id="condFormPlan" rows="2" placeholder="Lifestyle advice, diet, precautions..." class="w-full px-3 py-2 border border-slate-200 rounded-xl"></textarea>
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeModal('addConditionModal')" class="px-4 py-2 font-bold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
+          <button type="submit" class="px-5 py-2 font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md shadow-indigo-100">Save Condition</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD LAB RESULT MODAL -->
+  <div id="addLabModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-lg font-bold text-slate-900">Log Diagnostic Lab Test</h3>
+        <button onclick="closeModal('addLabModal')" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="labForm" onsubmit="handleSaveLab(event)" class="flex flex-col gap-3 text-xs">
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Test Name *</label>
+          <input type="text" id="labFormName" required placeholder="e.g. Fasting Blood Sugar, Hemoglobin (Hb)" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Result Value *</label>
+            <input type="text" id="labFormVal" required placeholder="e.g. 94.0" class="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Unit</label>
+            <input type="text" id="labFormUnit" placeholder="e.g. mg/dL, g/dL" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Status</label>
+            <select id="labFormStatus" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+              <option value="Normal">Normal (सामान्य)</option>
+              <option value="High">High (अधिक)</option>
+              <option value="Low">Low (कम)</option>
+              <option value="Critical">Critical</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Category</label>
+            <select id="labFormCategory" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+              <option value="Biochemistry">Biochemistry (शुगर / मेटाबॉलिक)</option>
+              <option value="Hematology">Hematology (हीमोग्लोबिन / सीबीसी)</option>
+              <option value="Lipid">Lipid Profile (कोलेस्ट्रॉल)</option>
+              <option value="Renal">Renal Function (किडनी)</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Test Date *</label>
+            <input type="date" id="labFormDate" required class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeModal('addLabModal')" class="px-4 py-2 font-bold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
+          <button type="submit" class="px-5 py-2 font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-xl shadow-md shadow-amber-100">Save Lab Result</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD VACCINE MODAL -->
+  <div id="addVaccineModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+          <i data-lucide="syringe" class="w-5 h-5 text-indigo-600"></i>
+          <span>Record Immunization (टीकाकरण)</span>
+        </h3>
+        <button onclick="closeModal('addVaccineModal')" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="vaccineForm" onsubmit="handleSaveVaccine(event)" class="flex flex-col gap-3 text-xs">
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Vaccine Name *</label>
+          <input type="text" id="vacFormName" required placeholder="e.g. COVID-19, TT Booster, Polio, MR" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Dose / Series</label>
+            <input type="text" id="vacFormDose" placeholder="e.g. Dose 1, Booster" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Date Administered *</label>
+            <input type="date" id="vacFormDate" required class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Administered By (ANM / ASHA)</label>
+            <input type="text" id="vacFormStaff" placeholder="e.g. ANM Sangeeta" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Clinic / Site</label>
+            <input type="text" id="vacFormClinic" placeholder="e.g. PHC Chandauli" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeModal('addVaccineModal')" class="px-4 py-2 font-bold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
+          <button type="submit" class="px-5 py-2 font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md shadow-indigo-100">Save Vaccine</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD DOCTOR VISIT MODAL -->
+  <div id="addVisitModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+          <i data-lucide="clipboard-list" class="w-5 h-5 text-indigo-600"></i>
+          <span>Log Doctor Consultation / डॉक्टर परामर्श</span>
+        </h3>
+        <button onclick="closeModal('addVisitModal')" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="visitForm" onsubmit="handleSaveVisit(event)" class="flex flex-col gap-3 text-xs">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Doctor Name *</label>
+            <input type="text" id="visitFormDoctor" required placeholder="e.g. Dr. Anand Verma, MBBS" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Hospital / PHC</label>
+            <input type="text" id="visitFormClinic" placeholder="e.g. PHC Chandauli" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+          </div>
+        </div>
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Reason for Visit / मुख्य समस्या *</label>
+          <input type="text" id="visitFormReason" required placeholder="e.g. Routine NCD Checkup, Cough & Fever" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+        </div>
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Diagnosis & Recommendations</label>
+          <textarea id="visitFormRecs" rows="2" placeholder="Physician advice, dosage instructions..." class="w-full px-3 py-2 border border-slate-200 rounded-xl"></textarea>
+        </div>
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Follow-up Date</label>
+          <input type="date" id="visitFormFollowUp" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeModal('addVisitModal')" class="px-4 py-2 font-bold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
+          <button type="submit" class="px-5 py-2 font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md shadow-indigo-100">Save Consultation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- UPLOAD DOCUMENT MODAL -->
+  <div id="uploadDocumentModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 flex flex-col gap-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+          <i data-lucide="upload" class="w-5 h-5 text-indigo-600"></i>
+          <span>Upload Medical File / दस्तावेज़</span>
+        </h3>
+        <button onclick="closeModal('uploadDocumentModal')" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="uploadForm" onsubmit="handleUploadFile(event)" class="flex flex-col gap-3 text-xs">
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Select File (PDF, PNG, JPG) *</label>
+          <input type="file" id="uploadFileSelect" required accept=".pdf,.png,.jpg,.jpeg,.webp,.txt" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+        </div>
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Document Description</label>
+          <input type="text" id="uploadFileDesc" placeholder="e.g. Lab Report / Doctor Prescription" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeModal('uploadDocumentModal')" class="px-4 py-2 font-bold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
+          <button type="submit" class="px-5 py-2 font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md shadow-indigo-100">Upload Document</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- EXPORT / BACKUP MODAL -->
+  <div id="exportModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 flex flex-col gap-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+          <i data-lucide="download" class="w-5 h-5 text-indigo-600"></i>
+          <span>Export & Backup Records</span>
+        </h3>
+        <button onclick="closeModal('exportModal')" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="flex flex-col gap-3 text-xs">
+        <p class="text-slate-600">Securely export complete ABHA records for offline backup or hospital migration:</p>
+        
+        <button onclick="exportHealthJSON()" class="flex items-center justify-between p-3.5 bg-orange-50/60 hover:bg-orange-50 border border-orange-200 rounded-2xl transition-all">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-orange-600 text-white flex items-center justify-center font-bold">
+              JSON
+            </div>
+            <div class="text-left">
+              <span class="font-bold text-slate-900 block">Export Full ABHA JSON Backup</span>
+              <span class="text-[11px] text-slate-500">Includes all vitals, meds, labs, vaccines</span>
+            </div>
+          </div>
+          <i data-lucide="download" class="w-4 h-4 text-orange-600"></i>
+        </button>
+
+        <button onclick="window.print()" class="flex items-center justify-between p-3.5 bg-green-50/60 hover:bg-green-50 border border-green-200 rounded-2xl transition-all">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-green-600 text-white flex items-center justify-center font-bold">
+              PDF
+            </div>
+            <div class="text-left">
+              <span class="font-bold text-slate-900 block">Print Bilingual Clinical Report</span>
+              <span class="text-[11px] text-slate-500">Formatted summary for doctor visit</span>
+            </div>
+          </div>
+          <i data-lucide="printer" class="w-4 h-4 text-green-600"></i>
+        </button>
+
+        <div class="pt-2 border-t border-slate-100">
+          <label class="font-bold text-slate-700 block mb-1">Restore from Backup</label>
+          <input type="file" id="importJsonFileInput" accept=".json" onchange="importHealthJSON(event)" class="w-full text-xs text-slate-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700">
+        </div>
+      </div>
+      <div class="flex justify-end pt-2">
+        <button onclick="closeModal('exportModal')" class="px-4 py-2 font-bold text-slate-600 hover:bg-slate-100 rounded-xl text-xs">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Translation Engine and Main Controller Scripts -->
+  <script src="/static/js/translations.js"></script>
+  <script src="/static/js/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/static/sw.js')
+          .then(reg => console.log('PWA Service Worker registered:', reg.scope))
+          .catch(err => console.log('Service Worker registration failed:', err));
+      });
+    }
+  </script>
+</body>
+</html>
