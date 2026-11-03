@@ -6,15 +6,38 @@ import sys
 # Add project root to sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+import database
 from database import calculate_bmi, calculate_bp_category, calculate_bmi_category, haversine_distance, init_db, get_db_connection
 from app import app
 
+TEST_DB = os.path.join(os.path.dirname(__file__), 'test_health_records.db')
+
 class TestAyushmanABHAHealthSystem(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        database.DB_PATH = TEST_DB
+        for f in [TEST_DB, f"{TEST_DB}-wal", f"{TEST_DB}-shm"]:
+            if os.path.exists(f):
+                try:
+                    os.remove(f)
+                except Exception:
+                    pass
+        with app.app_context():
+            init_db()
+
+    @classmethod
+    def tearDownClass(cls):
+        database.DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'health_records.db')
+        for f in [TEST_DB, f"{TEST_DB}-wal", f"{TEST_DB}-shm"]:
+            if os.path.exists(f):
+                try:
+                    os.remove(f)
+                except Exception:
+                    pass
+
     def setUp(self):
         app.config['TESTING'] = True
         self.client = app.test_client()
-        with app.app_context():
-            init_db()
 
     def test_bmi_calculation(self):
         bmi = calculate_bmi(70.5, 172)
@@ -124,5 +147,134 @@ class TestAyushmanABHAHealthSystem(unittest.TestCase):
         imported_id = import_res.get_json()['id']
         self.client.delete(f'/api/profiles/{imported_id}')
 
+    def test_ai_chat_api(self):
+        profiles = self.client.get('/api/profiles').get_json()
+        pid = profiles[0]['id']
+
+        # Ensure allergy exists for test profile
+        self.client.post('/api/allergies', json={
+            'profile_id': pid,
+            'allergen': 'Penicillin',
+            'allergy_type': 'Drug',
+            'reaction': 'Anaphylaxis and Severe Hives',
+            'severity': 'Severe',
+            'notes': 'Do not administer beta-lactams'
+        })
+
+        # Query about allergies
+        res = self.client.post('/api/ai-chat', json={
+            'profile_id': pid,
+            'message': 'What are my allergy risks? Is Penicillin safe?'
+        })
+        self.assertEqual(res.status_code, 200)
+        data = res.get_json()
+        self.assertIn('reply', data)
+        self.assertIn('context_used', data)
+        self.assertIn('suggested_actions', data)
+        self.assertIn('Penicillin', data['reply'])
+
+        # Query about vitals / BP
+        bp_res = self.client.post('/api/ai-chat', json={
+            'profile_id': pid,
+            'message': 'Analyze my blood pressure and vitals trend'
+        })
+        self.assertEqual(bp_res.status_code, 200)
+        bp_data = bp_res.get_json()
+        self.assertIn('Blood Pressure', bp_data['reply'])
+
+
+    def test_ai_extract_document_api(self):
+        profiles = self.client.get('/api/profiles').get_json()
+        pid = profiles[0]['id']
+
+        # Test simulated Blood Report extraction & auto-commit
+        res = self.client.post('/api/ai-extract-document', data={
+            'profile_id': pid,
+            'doc_type': 'lab',
+            'notes': 'Complete Blood Count: Hemoglobin 14.2 g/dL, Platelet 245000 /mcL',
+            'auto_update': 'true'
+        })
+        self.assertEqual(res.status_code, 201)
+        data = res.get_json()
+        self.assertTrue(data['success'])
+        self.assertTrue(data['auto_updated'])
+        self.assertGreater(len(data['extracted_labs']), 0)
+        self.assertIn('Blood Reports / Lab Tests', data['updated_sections'])
+
+    def test_doctor_card_api(self):
+        profiles = self.client.get('/api/profiles').get_json()
+        pid = profiles[0]['id']
+
+        res = self.client.get(f'/api/doctor-card/{pid}')
+        self.assertEqual(res.status_code, 200)
+        data = res.get_json()
+        self.assertIn('profile', data)
+        self.assertIn('allergies', data)
+        self.assertIn('conditions', data)
+        self.assertIn('medications', data)
+        self.assertIn('qr_data_string', data)
+        self.assertIn('ABDM_EHR_v2', data['qr_data_string'])
+
+    def test_auth_send_and_verify_otp(self):
+        # 1. Send OTP
+        res = self.client.post('/api/auth/send-otp', json={'phone': '9876543210'})
+        self.assertEqual(res.status_code, 200)
+        data = res.get_json()
+        self.assertTrue(data['success'])
+        self.assertEqual(data['phone'], '9876543210')
+        self.assertEqual(data['test_otp'], '482910')
+
+        # 2. Verify OTP for existing user
+        verify_res = self.client.post('/api/auth/verify-otp', json={'phone': '9876543210', 'otp': '482910'})
+        self.assertEqual(verify_res.status_code, 200)
+        verify_data = verify_res.get_json()
+        self.assertTrue(verify_data['success'])
+        self.assertIn('profile', verify_data)
+
+    def test_auth_register_onboard(self):
+        # Register a new citizen
+        payload = {
+            'full_name': 'Ananya Sharma',
+            'father_guardian_name': 'Kailash Sharma',
+            'date_of_birth': '1996-05-14',
+            'gender': 'Female',
+            'blood_group': 'O+',
+            'phone': '9988776655',
+            'aadhaar_last_four': '7823',
+            'village_town': 'Rampur',
+            'district': 'Varanasi',
+            'state': 'Uttar Pradesh',
+            'assigned_phc': 'PHC Chandauli'
+        }
+        res = self.client.post('/api/auth/register-onboard', json=payload)
+        self.assertEqual(res.status_code, 201)
+        data = res.get_json()
+        self.assertTrue(data['success'])
+        self.assertEqual(data['status'], 'REGISTER_SUCCESS')
+        self.assertIn('14-', data['profile']['abha_number'])
+        self.assertEqual(data['profile']['full_name'], 'Ananya Sharma')
+
+    def test_add_family_member_api(self):
+        profiles = self.client.get('/api/profiles').get_json()
+        primary_id = profiles[0]['id']
+
+        # Add Spouse to household
+        res = self.client.post('/api/profiles/add-family-member', json={
+            'primary_profile_id': primary_id,
+            'relationship': 'Spouse',
+            'full_name': 'Sunita Kumar',
+            'date_of_birth': '1984-08-20',
+            'gender': 'Female',
+            'blood_group': 'A+'
+        })
+        self.assertEqual(res.status_code, 201)
+        data = res.get_json()
+        self.assertTrue(data['success'])
+        self.assertEqual(data['profile']['relationship_to_primary'], 'Spouse')
+        self.assertIn('14-', data['profile']['abha_number'])
+
 if __name__ == '__main__':
     unittest.main()
+
+
+

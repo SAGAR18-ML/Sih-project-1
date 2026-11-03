@@ -7,8 +7,9 @@ DB_PATH = os.path.join(os.path.dirname(__file__), 'health_records.db')
 
 def get_db_connection():
     """Returns a connection to the SQLite database with row factory enabled."""
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=30.0)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode = WAL")
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
@@ -81,6 +82,9 @@ def init_db():
         aadhaar_last_four TEXT,
         ration_card_pmjay_id TEXT,
         full_name TEXT NOT NULL,
+        father_guardian_name TEXT,
+        relationship_to_primary TEXT DEFAULT 'Self',
+        family_head_id INTEGER,
         date_of_birth TEXT NOT NULL,
         gender TEXT NOT NULL,
         blood_group TEXT,
@@ -104,6 +108,26 @@ def init_db():
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
     """)
+
+    # OTP Verifications Table for Mobile Auth
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS otp_verifications (
+        phone TEXT PRIMARY KEY,
+        otp_code TEXT NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        is_verified INTEGER DEFAULT 0
+    )
+    """)
+
+    # Run non-destructive column migrations for existing databases
+    existing_cols = [row[1] for row in cursor.execute("PRAGMA table_info(profiles)").fetchall()]
+    if 'father_guardian_name' not in existing_cols:
+        cursor.execute("ALTER TABLE profiles ADD COLUMN father_guardian_name TEXT")
+    if 'relationship_to_primary' not in existing_cols:
+        cursor.execute("ALTER TABLE profiles ADD COLUMN relationship_to_primary TEXT DEFAULT 'Self'")
+    if 'family_head_id' not in existing_cols:
+        cursor.execute("ALTER TABLE profiles ADD COLUMN family_head_id INTEGER")
+
 
     # Vitals table
     cursor.execute("""
@@ -495,22 +519,68 @@ def seed_health_facilities(conn):
         ('Safdarjung Hospital & Vardhman Mahavir Medical College', 'District Hospital', 'Delhi', 'New Delhi', 'Ring Road, Opposite AIIMS, New Delhi', '+91 11 26165060', '108', 28.5685, 77.2070, 1, 1, 1, 'Medical Superintendent'),
         ('Dr. Ram Manohar Lohia Hospital (RML)', 'District Hospital', 'Delhi', 'New Delhi', 'Baba Kharak Singh Marg, New Delhi', '+91 11 23365525', '108', 28.6245, 77.2015, 1, 1, 1, 'Dr. A. K. Sharma'),
 
+        # Karnataka (Bengaluru, Mysuru, Rural PHCs)
+        ('Victoria Hospital & Bangalore Medical College', 'Medical College Hospital', 'Karnataka', 'Bengaluru Urban', 'Fort Road, Near City Market, Bengaluru', '+91 80 26701150', '108', 12.9634, 77.5756, 1, 1, 1, 'Medical Superintendent'),
+        ('Bowring & Lady Curzon Hospital', 'District Hospital', 'Karnataka', 'Bengaluru Urban', 'Lady Curzon Road, Shivajinagar, Bengaluru', '+91 80 25591325', '108', 12.9830, 77.6045, 1, 1, 1, 'Dr. Manoj Kumar'),
+        ('Primary Health Centre (PHC) K.R. Puram', 'PHC', 'Karnataka', 'Bengaluru Urban', 'Old Madras Road, K.R. Puram, Bengaluru', '+91 80 25612340', '108', 13.0075, 77.6959, 1, 1, 0, 'Dr. Deepa Gowda'),
+        ('Community Health Centre (CHC) Yelahanka', 'CHC', 'Karnataka', 'Bengaluru Urban', 'BBMP Hospital Road, Yelahanka Old Town', '+91 80 28560108', '108', 13.1007, 77.5963, 1, 1, 1, 'Dr. K. Venkatesh'),
+        ('K.R. Hospital & Mysore Medical College', 'Medical College Hospital', 'Karnataka', 'Mysuru', 'Irwin Road, Mysuru', '+91 821 2520512', '108', 12.3160, 76.6500, 1, 1, 1, 'Dean MMCRI'),
+
         # Maharashtra (Mumbai / Pune / Rural)
         ('KEM Hospital & Seth G.S. Medical College', 'Medical College Hospital', 'Maharashtra', 'Mumbai', 'Acharya Donde Marg, Parel, Mumbai', '+91 22 24107000', '108', 19.0028, 72.8424, 1, 1, 1, 'Dean KEM Hospital'),
         ('Primary Health Centre (PHC) Khed', 'PHC', 'Maharashtra', 'Pune', 'Khed-Rajgurunagar, Pune District', '+91 2135 222108', '108', 18.8570, 73.8980, 1, 1, 0, 'Dr. V. Patil'),
         ('District Hospital Aundh', 'District Hospital', 'Maharashtra', 'Pune', 'Aundh Camp, Pune', '+91 20 27280420', '108', 18.5750, 73.8040, 1, 1, 1, 'Civil Surgeon Pune'),
 
-        # Bihar
+        # Telangana & Andhra Pradesh (Hyderabad, Visakhapatnam)
+        ('Osmania General Hospital', 'Medical College Hospital', 'Telangana', 'Hyderabad', 'Afzal Gunj, Hyderabad', '+91 40 24600121', '108', 17.3773, 78.4764, 1, 1, 1, 'Superintendent OGH'),
+        ('Gandhi Hospital & Medical College', 'Medical College Hospital', 'Telangana', 'Secunderabad', 'Musheerabad, Secunderabad', '+91 40 27505566', '108', 17.4244, 78.5034, 1, 1, 1, 'Superintendent Gandhi'),
+        ('Primary Health Centre (PHC) Shamshabad', 'PHC', 'Telangana', 'Rangareddy', 'Near Bus Stand, Shamshabad', '+91 8413 222108', '108', 17.2600, 78.3970, 1, 1, 0, 'Dr. P. Srinivas'),
+        ('King George Hospital (KGH)', 'Medical College Hospital', 'Andhra Pradesh', 'Visakhapatnam', 'Maharanipeta, Visakhapatnam', '+91 891 2564891', '108', 17.7088, 83.3050, 1, 1, 1, 'Superintendent KGH'),
+
+        # Gujarat (Ahmedabad, Surat)
+        ('Civil Hospital Ahmedabad (BJ Medical College)', 'Medical College Hospital', 'Gujarat', 'Ahmedabad', 'Asarwa, Ahmedabad', '+91 79 22680074', '108', 23.0525, 72.6028, 1, 1, 1, 'Medical Superintendent'),
+        ('Primary Health Centre (PHC) Sanand', 'PHC', 'Gujarat', 'Ahmedabad', 'Sanand Town, Ahmedabad District', '+91 2717 222108', '108', 22.9860, 72.3810, 1, 1, 0, 'Dr. H. Patel'),
+
+        # Rajasthan (Jaipur)
+        ('Sawai Man Singh (SMS) Hospital', 'Medical College Hospital', 'Rajasthan', 'Jaipur', 'Jawahar Lal Nehru Marg, Jaipur', '+91 141 2560291', '108', 26.8972, 75.8156, 1, 1, 1, 'Superintendent SMS'),
+        ('Primary Health Centre (PHC) Amer', 'PHC', 'Rajasthan', 'Jaipur', 'Amer Fort Road, Jaipur', '+91 141 2530108', '108', 26.9855, 75.8513, 1, 1, 0, 'Dr. R. Meena'),
+
+        # Madhya Pradesh (Bhopal, Indore)
+        ('Hamidia Hospital (Gandhi Medical College)', 'Medical College Hospital', 'Madhya Pradesh', 'Bhopal', 'Royal Market, Bhopal', '+91 755 2540590', '108', 23.2644, 77.3888, 1, 1, 1, 'Dean GMC'),
+        ('MY Hospital (Maharaja Yeshwantrao)', 'District Hospital', 'Madhya Pradesh', 'Indore', 'MY Hospital Road, Indore', '+91 731 2527383', '108', 22.7196, 75.8777, 1, 1, 1, 'Superintendent MYH'),
+
+        # Kerala (Thiruvananthapuram, Kochi)
+        ('Government Medical College Hospital', 'Medical College Hospital', 'Kerala', 'Thiruvananthapuram', 'Medical College PO, Thiruvananthapuram', '+91 471 2528300', '108', 8.5241, 76.9299, 1, 1, 1, 'Principal GMC TVM'),
+        ('Ernakulam General Hospital', 'District Hospital', 'Kerala', 'Ernakulam', 'Hospital Road, Kochi', '+91 484 2361251', '108', 9.9712, 76.2842, 1, 1, 1, 'Superintendent GH'),
+
+        # Bihar (Patna)
         ('Patna Medical College and Hospital (PMCH)', 'Medical College Hospital', 'Bihar', 'Patna', 'Ashok Rajpath, Patna', '+91 612 2300080', '108', 25.6200, 85.1610, 1, 1, 1, 'Superintendent PMCH'),
         ('Primary Health Centre (PHC) Danapur', 'PHC', 'Bihar', 'Patna', 'Danapur Cantonment, Patna', '+91 612 241108', '108', 25.6320, 85.0450, 1, 1, 0, 'Dr. M. K. Yadav'),
 
-        # Tamil Nadu
+        # Tamil Nadu (Chennai)
         ('Rajiv Gandhi Government General Hospital', 'Medical College Hospital', 'Tamil Nadu', 'Chennai', 'EVR Periyar Salai, Park Town, Chennai', '+91 44 25305000', '108', 13.0827, 80.2707, 1, 1, 1, 'Dean RGGGH'),
         ('Primary Health Centre (PHC) Sriperumbudur', 'PHC', 'Tamil Nadu', 'Kanchipuram', 'Bangalore Highway, Sriperumbudur', '+91 44 27162230', '108', 12.9690, 79.9440, 1, 1, 0, 'Dr. S. Ramanathan'),
 
-        # West Bengal
+        # West Bengal (Kolkata)
         ('Calcutta Medical College and Hospital', 'Medical College Hospital', 'West Bengal', 'Kolkata', '88 College Street, Kolkata', '+91 33 22551600', '108', 22.5744, 88.3639, 1, 1, 1, 'Superintendent MCH'),
-        ('Primary Health Centre (PHC) Singur', 'PHC', 'West Bengal', 'Hooghly', 'Singur, Hooghly District', '+91 33 2630120', '108', 22.8120, 88.2310, 1, 1, 0, 'Dr. B. Das')
+        ('Primary Health Centre (PHC) Singur', 'PHC', 'West Bengal', 'Hooghly', 'Singur, Hooghly District', '+91 33 2630120', '108', 22.8120, 88.2310, 1, 1, 0, 'Dr. B. Das'),
+
+        # Punjab & Chandigarh
+        ('Postgraduate Institute of Medical Education & Research (PGIMER)', 'Apex Hospital', 'Chandigarh', 'Chandigarh', 'Sector 12, Chandigarh', '+91 172 2746018', '108', 30.7634, 76.7766, 1, 1, 1, 'Director PGIMER'),
+        ('Civil Hospital Mohali', 'District Hospital', 'Punjab', 'SAS Nagar', 'Phase 6, Mohali', '+91 172 2225108', '108', 30.7250, 76.7120, 1, 1, 1, 'SMO Civil Hospital'),
+
+        # Odisha (Bhubaneswar)
+        ('AIIMS Bhubaneswar', 'Apex Hospital', 'Odisha', 'Khurda', 'Sijua, Patrapada, Bhubaneswar', '+91 674 2476789', '108', 20.2310, 85.7725, 1, 1, 1, 'Director AIIMS BBSR'),
+        ('Capital Hospital Bhubaneswar', 'District Hospital', 'Odisha', 'Khurda', 'Unit 6, Ganga Nagar, Bhubaneswar', '+91 674 2391983', '108', 20.2644, 85.8281, 1, 1, 1, 'Director Capital Hospital'),
+
+        # Medical Stores, Jan Aushadhi Kendras & Urban Clinics
+        ('Pradhan Mantri Jan Aushadhi Kendra (PMBJP)', 'Jan Aushadhi Kendra', 'Karnataka', 'Bengaluru Urban', 'Near K.R. Puram Govt Hospital, Bengaluru', '+91 80 25619988', '108', 13.0080, 77.6965, 0, 1, 0, 'Pharmacist Suresh N.'),
+        ('Apollo 24x7 Pharmacy & Medical Store', 'Medical Store / Pharmacy', 'Karnataka', 'Bengaluru Urban', 'Indiranagar 100ft Road, Bengaluru', '+91 80 25200108', '108', 12.9719, 77.6412, 1, 0, 0, 'Pharmacist In-charge'),
+        ('Jan Aushadhi Medical Store Chandauli', 'Jan Aushadhi Kendra', 'Uttar Pradesh', 'Chandauli', 'Collectorate Road, Chandauli', '+91 5412 260888', '108', 25.2630, 83.2690, 0, 1, 0, 'Pharmacist R. Verma'),
+        ('Sanjivani 24x7 Medical Store & Chemist', 'Medical Store / Pharmacy', 'Uttar Pradesh', 'Varanasi', 'Near Deen Dayal Hospital, Pandeypur, Varanasi', '+91 542 2589000', '108', 25.3420, 82.9930, 1, 0, 0, 'Pharmacist M. Tripathi'),
+        ('Jan Aushadhi Medical Store AIIMS', 'Jan Aushadhi Kendra', 'Delhi', 'New Delhi', 'Near Gate No. 2, AIIMS Complex, New Delhi', '+91 11 26590000', '108', 28.5678, 77.2110, 1, 1, 0, 'Pharmacist In-charge'),
+        ('MedPlus 24x7 Pharmacy & Clinic', 'Medical Store / Pharmacy', 'Telangana', 'Hyderabad', 'Afzal Gunj, Main Road, Hyderabad', '+91 40 24608888', '108', 17.3780, 78.4770, 1, 0, 0, 'Pharmacist K. Reddy'),
+        ('Aayush Urban Health & Wellness Clinic', 'Clinic', 'Karnataka', 'Bengaluru Urban', 'HAL 2nd Stage, Indiranagar, Bengaluru', '+91 80 25205566', '108', 12.9690, 77.6430, 0, 1, 0, 'Dr. Sunita Rao (MBBS)')
     ]
 
     for f in facilities:

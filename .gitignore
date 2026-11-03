@@ -4,6 +4,10 @@ __pycache__/
 health_records.db
 uploads/*
 !uploads/.gitkeep
+static/uploads/*
+!static/uploads/.gitkeep
+cloudflared.exe
+*.exe
 android-app/.gradle/
 android-app/build/
 android-app/app/build/

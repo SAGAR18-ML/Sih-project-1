@@ -1,58 +1,562 @@
-/* HealthPulse EHR Custom Styles */
+/* =========================================================
+   ADHR (Ayushman Digital Health Record) - Core Design System
+   Clean, Unified Multi-Device Layout (Mobile Phone & PC Web)
+========================================================= */
 
-/* Tab navigation states */
-.tab-btn {
-  color: #64748b;
-  background-color: transparent;
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --emerald-primary: #059669;
+  --emerald-light: #ecfdf5;
+  --red-sos: #dc2626;
+  --navy-dark: #0f172a;
 }
 
-.tab-btn:hover {
-  color: #334155;
-  background-color: #f1f5f9;
+/* ==========================================
+   1. BASE & MULTI-DEVICE FOUNDATION
+========================================== */
+
+*, *::before, *::after {
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+  text-rendering: optimizeLegibility;
 }
 
-.tab-btn.active-tab {
-  color: #4f46e5;
-  background-color: #eef2ff;
-  border-bottom: 2px solid #4f46e5;
+html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  position: relative;
+  background-color: #f8fafc;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  font-size: 14px;
 }
 
-.tab-pane {
-  display: none;
+@media (min-width: 640px) {
+  html { font-size: 15px; }
 }
 
-.tab-pane.active {
+@media (min-width: 1024px) {
+  html { font-size: 16px; }
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 100vw;
+  min-height: 100vh;
+  background-color: #f8fafc;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #1e293b;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  overflow-x: hidden;
+  position: relative;
+  touch-action: pan-y;
+}
+
+/* Body Scroll-Lock when any Modal is Active */
+body.modal-open {
+  overflow: hidden !important;
+  touch-action: none;
+}
+
+/* App Wrapper */
+.app-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
   display: flex;
-  animation: fadeIn 0.2s ease-in-out;
+  flex-direction: column;
+  min-height: 100vh;
+  position: relative;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+/* Mobile Safe-Area Bottom Padding for App Wrapper */
+@media (max-width: 767px) {
+  .app-wrapper {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 16px)) !important;
+  }
 }
 
-/* Vitals metric toggle buttons */
+@media (min-width: 768px) {
+  .app-wrapper {
+    padding-bottom: 24px;
+  }
+}
+
+/* Responsive Table Wrapper - Prevents horizontal viewport expansion */
+.responsive-table-container {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ==========================================
+   2. ACCESSIBILITY & SENIOR CITIZEN MODE
+========================================== */
+
+body.senior-mode {
+  font-size: 18px !important;
+  line-height: 1.6 !important;
+  background-color: #f1f5f9 !important;
+  color: #000000 !important;
+}
+
+body.senior-mode h1,
+body.senior-mode h2,
+body.senior-mode h3,
+body.senior-mode h4 {
+  font-size: 125% !important;
+  font-weight: 900 !important;
+  color: #000000 !important;
+}
+
+body.senior-mode button,
+body.senior-mode a,
+body.senior-mode .tab-btn,
+body.senior-mode .mobile-nav-item {
+  font-size: 15px !important;
+  min-height: 48px !important;
+  font-weight: 800 !important;
+}
+
+body.senior-mode .glass-card,
+body.senior-mode .modal-content-card {
+  border: 2px solid #334155 !important;
+  background: #ffffff !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12) !important;
+}
+
+body.senior-mode .text-xs { font-size: 14px !important; }
+body.senior-mode .text-\[10px\], body.senior-mode .text-\[11px\], body.senior-mode .text-\[9px\] { font-size: 13px !important; font-weight: 700 !important; }
+
+/* ==========================================
+   3. VISUAL EFFECTS & COMPONENT STYLES
+========================================== */
+
+/* Shimmer Strip */
+.national-shimmer-strip {
+  height: 4px;
+  width: 100%;
+  background: linear-gradient(90deg, #ff9933, #ffffff, #138808, #ff9933);
+  background-size: 300% 100%;
+  animation: shimmerSweep 6s ease infinite;
+}
+
+@keyframes shimmerSweep {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Glassmorphism Cards */
+.glass-card {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+  contain: content;
+}
+
+@supports (backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px)) {
+  .glass-card {
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(5, 150, 105, 0.35);
+  box-shadow: 0 10px 25px -4px rgba(5, 150, 105, 0.12), 0 4px 10px -2px rgba(0, 0, 0, 0.04);
+}
+
+/* Tactile Spring Press Feedback */
+button, a, .tab-btn, .mobile-nav-item, .clickable-chip, .interactive-card, .glass-card {
+  touch-action: manipulation;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+button:active, a:active, .mobile-nav-item:active, .tab-btn:active, .interactive-card:active {
+  transform: scale(0.96) translateY(1px);
+}
+
+/* Doctor Card Holographic & Vibrant Styling */
+.doctor-card-glow {
+  position: relative;
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #064e3b 100%);
+  border-radius: 28px;
+  box-shadow: 0 16px 40px -8px rgba(15, 23, 42, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+.hologram-doctor-border {
+  position: relative;
+  border: 2px solid transparent;
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(135deg, #10b981, #06b6d4, #6366f1, #f43f5e) border-box;
+}
+
+/* Pulsing SOS Badge */
+.pulse-sos-glow {
+  position: relative;
+}
+
+.pulse-sos-glow::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  background: rgba(220, 38, 38, 0.35);
+  z-index: -1;
+  animation: pulseSOS 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulseSOS {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 0;
+  }
+}
+
+/* AI Pulse Glow */
+.pulse-ai-glow {
+  position: relative;
+  background: linear-gradient(135deg, #059669, #0d9488, #4f46e5);
+  background-size: 200% 200%;
+  animation: gradientFlow 4s ease infinite;
+}
+
+@keyframes gradientFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.pulse-ai-glow::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.5), rgba(79, 70, 229, 0.5));
+  z-index: -1;
+  animation: pulseAI 2.4s ease infinite;
+}
+
+@keyframes pulseAI {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.12); opacity: 0; }
+}
+
+/* Live Laser Scanning Animation for AI OCR */
+.ai-scan-radar {
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-scan-radar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #10b981, #38bdf8, transparent);
+  box-shadow: 0 0 12px #10b981;
+  animation: scanLaser 2s linear infinite;
+}
+
+@keyframes scanLaser {
+  0% { top: 0%; opacity: 0.2; }
+  50% { opacity: 1; }
+  100% { top: 100%; opacity: 0.2; }
+}
+
+/* Drag & Drop Zone */
+.drag-drop-zone {
+  border: 2px dashed #cbd5e1;
+  background-color: #f8fafc;
+  transition: all 0.2s ease;
+}
+
+.drag-drop-zone:hover, .drag-drop-zone.dragover {
+  border-color: #059669;
+  background-color: #ecfdf5;
+}
+
+.pulse-gps-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background-color: #10b981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: pulseGreen 1.8s infinite;
+}
+
+@keyframes pulseGreen {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+/* ==========================================
+   4. NATIVE MOBILE BOTTOM NAVIGATION BAR
+========================================== */
+
+.mobile-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: calc(60px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 6px);
+  padding-top: 4px;
+  background: rgba(255, 255, 255, 0.98);
+  border-top: 1px solid rgba(226, 232, 240, 0.95);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  box-shadow: 0 -4px 25px -3px rgba(0, 0, 0, 0.1);
+  pointer-events: auto;
+}
+
+@supports (backdrop-filter: blur(16px)) or (-webkit-backdrop-filter: blur(16px)) {
+  .mobile-bottom-nav {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+}
+
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 100%;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 700;
+  position: relative;
+  gap: 2px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: color 0.15s ease;
+}
+
+.mobile-nav-item.active {
+  color: #059669 !important;
+  font-weight: 900 !important;
+}
+
+.mobile-nav-item.active i {
+  color: #059669 !important;
+  transform: translateY(-2px) scale(1.12);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.mobile-nav-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  width: 16px;
+  height: 3px;
+  background: #059669;
+  border-radius: 999px;
+  box-shadow: 0 0 8px rgba(5, 150, 105, 0.6);
+}
+
+/* 108 SOS Dedicated Center Button */
+.mobile-nav-sos {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  color: #ffffff !important;
+  border-radius: 18px;
+  margin: 2px 4px;
+  box-shadow: 0 6px 18px rgba(220, 38, 38, 0.45);
+  transform: translateY(-4px);
+  border: 2px solid #ffffff;
+}
+
+.mobile-nav-sos i {
+  color: #ffffff !important;
+}
+
+.mobile-nav-sos:active {
+  transform: translateY(-2px) scale(0.94) !important;
+}
+
+/* ====================================================
+   5. UNIFIED DUAL-MODE MODAL ARCHITECTURE
+   - Mobile (< 768px): Native Bottom Sheet with Drag Pill
+   - PC (>= 768px): Centered Floating Dialog
+==================================================== */
+
+.modal-backdrop.hidden,
+.modal-backdrop[hidden] {
+  display: none !important;
+}
+
+.modal-backdrop:not(.hidden) {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 100 !important;
+  display: flex !important;
+  background: rgba(15, 23, 42, 0.75) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  overflow: hidden !important; /* CRITICAL: Prevents double backdrop scrolling */
+  overscroll-behavior: contain !important;
+  animation: backdropFadeIn 0.2s ease forwards !important;
+}
+
+@keyframes backdropFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Modal Content Card Common Flex System */
+.modal-content-card {
+  display: flex !important;
+  flex-direction: column !important;
+  background: #ffffff !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain !important;
+  position: relative !important;
+}
+
+/* Fixed Header (Never scrolled away) */
+.modal-sticky-header, .modal-header {
+  flex-shrink: 0 !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 30 !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9) !important;
+}
+
+/* --- MOBILE PHONE MODE (< 768px) --- */
+@media (max-width: 767px) {
+  .modal-backdrop:not(.hidden) {
+    align-items: flex-end !important;
+    justify-content: flex-end !important;
+    padding: 0 !important;
+  }
+
+  .modal-content-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 88dvh !important;
+    max-height: 88vh !important;
+    margin: 0 !important;
+    border-radius: 24px 24px 0 0 !important;
+    border-bottom: none !important;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.35) !important;
+    padding-bottom: max(env(safe-area-inset-bottom, 16px), 16px) !important;
+    animation: mobileSheetSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    will-change: transform;
+  }
+
+  @keyframes mobileSheetSlideUp {
+    0% { transform: translateY(100%); }
+    100% { transform: translateY(0); }
+  }
+
+  .mobile-sheet-drag-pill {
+    display: block !important;
+    width: 40px;
+    height: 5px;
+    background-color: #cbd5e1;
+    border-radius: 9999px;
+    margin: 8px auto 4px auto;
+    flex-shrink: 0;
+  }
+}
+
+/* --- PC & TABLET DESKTOP MODE (>= 768px) --- */
+@media (min-width: 768px) {
+  .modal-backdrop:not(.hidden) {
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 24px !important;
+  }
+
+  .modal-content-card {
+    width: 100% !important;
+    max-width: 660px !important;
+    max-height: 85vh !important;
+    max-height: 85dvh !important;
+    margin: auto !important;
+    border-radius: 24px !important;
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.15) !important;
+    animation: desktopModalZoom 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    will-change: transform, opacity;
+  }
+
+  @keyframes desktopModalZoom {
+    0% {
+      opacity: 0;
+      transform: scale(0.94);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .mobile-sheet-drag-pill {
+    display: none !important;
+  }
+}
+
+/* ==========================================
+   6. UI CONTROLS, PILLS & CHAT
+========================================== */
+
+/* Metric & Category Pills */
 .vitals-metric-btn {
   color: #64748b;
   background-color: transparent;
+  transition: all 0.15s ease;
 }
 
 .vitals-metric-btn.active {
   color: #0f172a;
   background-color: #ffffff;
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.08);
 }
 
-/* Lab category filter pills */
-.lab-cat-pill.active {
-  background-color: #0f172a;
+.lab-cat-pill.active, .fac-filter-btn.active {
+  background-color: #059669;
   color: #ffffff;
+  box-shadow: 0 2px 8px -1px rgba(5, 150, 105, 0.3);
 }
 
-/* Scrollbar polish */
+/* Compact Scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -68,38 +572,112 @@
   background: #94a3b8;
 }
 
-/* Print Stylesheet for Emergency Medical Card & Clinical Reports */
+/* Chat Message Bubbles */
+.chat-bubble-user {
+  background: #059669;
+  color: #ffffff;
+  border-radius: 18px 18px 4px 18px;
+  align-self: flex-end;
+}
+
+.chat-bubble-ai {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-radius: 18px 18px 18px 4px;
+  border: 1px solid #e2e8f0;
+  align-self: flex-start;
+}
+
+/* Voice Waves */
+.voice-wave-bar {
+  display: inline-block;
+  width: 3px;
+  height: 12px;
+  background-color: #10b981;
+  border-radius: 9999px;
+  margin: 0 1px;
+  animation: soundWave 1.2s ease-in-out infinite alternate;
+}
+
+.voice-wave-bar:nth-child(2) { animation-delay: 0.2s; height: 18px; }
+.voice-wave-bar:nth-child(3) { animation-delay: 0.4s; height: 10px; }
+.voice-wave-bar:nth-child(4) { animation-delay: 0.1s; height: 16px; }
+
+@keyframes soundWave {
+  0% { transform: scaleY(0.4); }
+  100% { transform: scaleY(1.3); }
+}
+
+/* OTP Box Styles */
+.otp-digit-input {
+  width: 42px;
+  height: 48px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 900;
+  font-family: monospace;
+  border: 2px solid #e2e8f0;
+  border-radius: 14px;
+  background-color: #f8fafc;
+  transition: all 0.15s ease;
+}
+
+.otp-digit-input:focus {
+  border-color: #059669;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+  outline: none;
+}
+
+/* Family Vault Relations */
+.family-relation-chip {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1.5px solid #e2e8f0;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.family-relation-chip.selected {
+  background: #ecfdf5;
+  border-color: #059669;
+  color: #065f46;
+}
+
+/* Print Layout */
 @media print {
   body {
     background-color: white !important;
     color: black !important;
+    padding-bottom: 0 !important;
   }
 
-  header, nav, #mainTabNav, button, .vitals-metric-btn, #profileDropdownMenu,
-  #globalSearchInput, #quickAddVitalBtn, #quickAddMedBtn, #quickAddVisitBtn, #editProfileBtn {
+  header, nav, #mainTabNav, .mobile-bottom-nav, button, .vitals-metric-btn, #profileDropdownMenu,
+  #globalSearchInput, #quickAddVitalBtn, #quickAddMedBtn, #quickAddVisitBtn, #editProfileBtn, .mobile-sub-pill {
     display: none !important;
   }
 
-  #emergencyModal {
+  #doctorCardModal, #emergencyModal {
     position: static !important;
     display: block !important;
     background: transparent !important;
     padding: 0 !important;
   }
 
-  #emergencyModal > div {
+  #doctorCardModal > div, #emergencyModal > div {
     max-width: 100% !important;
     box-shadow: none !important;
     border: none !important;
     padding: 0 !important;
   }
 
-  #printableEmergencyCard {
+  #printableDoctorCard, #printableEmergencyCard {
     border: 2px solid #000 !important;
     box-shadow: none !important;
   }
-
-  .tab-pane {
-    display: block !important;
-  }
 }
+
+
